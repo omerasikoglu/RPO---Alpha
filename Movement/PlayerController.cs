@@ -5,10 +5,11 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour, ICollider
 {
+    #region Components
 
     private Rigidbody2D rigidbody2d;
 
-    //[SerializeField] private SpriteAnimator spriteAnimator;
+    #endregion
 
     #region Animations
 
@@ -20,6 +21,8 @@ public class PlayerController : MonoBehaviour, ICollider
     #region Dash
 
     //variables
+    private bool canDash = true;
+
     private float dashTimeLeft;
     private float lastImageXpos;
     private float lastDash = -1f; //son dash attıgımızdan geçen süre
@@ -38,13 +41,13 @@ public class PlayerController : MonoBehaviour, ICollider
     private float x;   //girilen inputun yönünü belirlemek için
     private bool isWalking;
     private bool isFacingRight = true;
-    private bool canFlip;
+    private bool canFlip = true;
 
     //consts
-    private const float movementSpeed = 10f;
+    private const float movementSpeed = 7f;
 
     private float turnTimer;
-    private float turnTimerSet = 1f;
+    private float turnTimerSet = .3f;
 
     #endregion
 
@@ -62,7 +65,7 @@ public class PlayerController : MonoBehaviour, ICollider
     private int amountOfJumps = 2;
 
     private float jumpTimer;
-    private float jumpTimerSet = 0.15f;
+    private float jumpTimerSet = .15f;
 
     private float wallJumpTimer;
     private float wallJumpTimerSet = 0.5f;
@@ -92,18 +95,16 @@ public class PlayerController : MonoBehaviour, ICollider
 
     #region Ledge
 
-    public Transform ledgePosBotTransform;
-
     private bool isClimbingLedge = false;
 
-    private Vector2 ledgePosBot;
+    //private Transform ledgeTransform;
     private Vector2 ledgePos1;
     private Vector2 ledgePos2;
 
 
     private float wallCheckDistance = .3f; //rectangle collider'da da tanımlı
 
-    private float ledgeClimbXOffset1 = 0.5f;
+    private float ledgeClimbXOffset1 = 0.3f;
     private float ledgeClimbYOffset1 = 0f;
 
     private float ledgeClimbXOffset2 = 0.5f;
@@ -111,7 +112,7 @@ public class PlayerController : MonoBehaviour, ICollider
 
     #endregion
 
-    #region Incoming 
+    #region Others 
 
 
     //eklenecekler
@@ -119,6 +120,8 @@ public class PlayerController : MonoBehaviour, ICollider
     private bool wallJumping = false;
     private bool isDashing = false;
     private Vector2 velocity;
+    private Vector2 ledgePos;
+    private float ledgeOffset;
 
     #endregion
 
@@ -156,54 +159,61 @@ public class PlayerController : MonoBehaviour, ICollider
     }
     #endregion
 
+    //--------------Essential Methods-----------------------------------------------------------
+
     private void Awake()
     {
         rigidbody2d = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+
+        //ledgeTransform = transform.Find("ledgeTransform");
+        ledgePos = new Vector2(transform.localPosition.x + .4f, transform.localPosition.y);
     }
     private void Start()
     {
         amountOfJumpsLeft = amountOfJumps;
         wallHopDirection.Normalize();
         wallJumpDirection.Normalize();
-        canMove = true; canFlip = true;
-
-
-
     }
     private void Update()
     {
-        //Time.timeScale = .1f;
-        ledgePosBot = ledgePosBotTransform.position;
-        //wallSliding = false;
-        //isWalking = false;
-        //wallGrabbing = false;
-        //ledgePosBot = transform.position + new Vector3(0f, .5f, 0f);
-        x = Input.GetAxisRaw("Horizontal");    //yürüme
-
+        Timers();
         UpdateAnimations();
         CheckInputs();
-        CheckWallGrab();
         CheckMovementDirection();
-        CheckDash();
+        CheckIfCanJump();
         CheckLedgeClimb();
-
-        if (turnTimer >= 0)
-        {
-            turnTimer -= Time.deltaTime;
-            if (turnTimer <= 0)
-            {
-                canMove = true;
-                canFlip = true;
-                canJump = true;
-            }
-        }
-
     }
     private void FixedUpdate()
     {
         ApplyMovement();
         ApplyJumping();
+        ApplyWallGrabbing();
+        ApplyDash();
+    }
+
+    //--------------Update Methods---------------------------------------------------------------
+
+    private void Timers()
+    {
+        //if (turnTimer >= 0)
+        //{
+        //    turnTimer -= Time.deltaTime;
+        //    if (turnTimer <= 0)
+        //    {
+        //        canMove = true;
+        //        canFlip = true;
+        //        canJump = true;
+        //    }
+        //}
+        if (jumpTimer > 0)
+        {
+            jumpTimer -= Time.deltaTime;
+            if (jumpTimer <= 0)
+            {
+                canJump = true;
+            }
+        }
     }
     private void UpdateAnimations()
     {
@@ -215,20 +225,22 @@ public class PlayerController : MonoBehaviour, ICollider
     }
     private void CheckInputs()
     {
-        if (Input.GetKeyDown(KeyCode.X)) //dash atma
+        x = Input.GetAxisRaw("Horizontal");    //yürüme
+
+        if (Input.GetKeyDown(KeyCode.X) && canDash) //dash atma
         {
             if (Time.time >= (lastDash + dashCooldown)) AttemptToDash();
         }
 
         if (isGrounded)
         {
-            canJump = true;
-            amountOfJumpsLeft = amountOfJumps;
-            canJumpFromRight = true;
-            canJumpFromLeft = true;
-            wallSliding = false;
-
-
+            if (rigidbody2d.velocity.y <= 0) // bu olmadan ekstra jump bugı oluyi
+            {
+                amountOfJumpsLeft = amountOfJumps;
+                canJumpFromRight = true;
+                canJumpFromLeft = true;
+                wallSliding = false;
+            }
 
             if (x != 0) //yürüyor
             {
@@ -242,15 +254,16 @@ public class PlayerController : MonoBehaviour, ICollider
 
             if (canJump && Input.GetKeyDown(KeyCode.C)) //zıplıyor
             {
-                rigidbody2d.velocity += jumpForce * (Vector2.up);
-                amountOfJumpsLeft--;
-
+                Jump();
             }
-
         }
+
         else if (!isGrounded)   //yere değmiyorsa
         {
-
+            if (canJump && Input.GetKeyDown(KeyCode.C)) //zıplıyor
+            {
+                Jump();
+            }
             if (onRightWall)
             {
                 if (Input.GetKey(KeyCode.Z) && canGrabWall)
@@ -280,19 +293,11 @@ public class PlayerController : MonoBehaviour, ICollider
                         canJumpFromRight = false;
                         canJumpFromLeft = true;
                     }
-                    if (x < 0)
-                    {
-                        canMove = false;
-                        canFlip = false;
-                        canJump = false;
-                        turnTimer = turnTimerSet;
-                    }
-
                 }
             }
             else if (onLeftWall)
             {
-                if (Input.GetKey(KeyCode.Z)&&canGrabWall)
+                if (Input.GetKey(KeyCode.Z) && canGrabWall)
                 {
                     wallGrabbing = true;
                 }
@@ -319,92 +324,15 @@ public class PlayerController : MonoBehaviour, ICollider
                         canJumpFromRight = true;
                         canJumpFromLeft = false;
                     }
-                    if (x > 0)
-                    {
-                        canMove = false;
-                        canFlip = false;
-                        canJump = false;
-                        turnTimer = turnTimerSet;
-                    }
+                   
                 }
             }
-            else if (!CheckOnWall())
+            else if (!CheckOnWall()) //havadaysa
             {
-                canJumpFromRight = true;
-                canJumpFromLeft = true;
+                wallSliding = false;
+                //canJumpFromRight = true;
+                //canJumpFromLeft = true;
             }
-        }
-    }
-
-    private void AttemptToDash()
-    {
-        isDashing = true;
-        dashTimeLeft = dashTime;
-        lastDash = Time.time;
-
-        PlayerAfterImagePool.Instance.GetFromPool();
-        lastImageXpos = transform.position.x;
-    }
-    private void CheckDash()
-    {
-        if (isDashing)
-        {
-            if (dashTimeLeft > 0)
-            {
-                canMove = false;
-                canFlip = false;
-
-                rigidbody2d.velocity = new Vector2(dashSpeed * x, 0);
-                dashTimeLeft -= Time.deltaTime;
-
-                if (Mathf.Abs(transform.position.x - lastImageXpos) > distanceBetweenImages)
-                {
-                    PlayerAfterImagePool.Instance.GetFromPool();
-                    lastImageXpos = transform.position.x;
-                }
-            }
-            if (dashTimeLeft <= 0 || CheckOnWall())
-            {
-                isDashing = false;
-                canMove = true;
-                canFlip = true;
-            }
-
-        }
-    }
-    private void ApplyJumping()
-    {
-        if (rigidbody2d.velocity.y < 0)      //düşüyorsa
-        {
-            if (!wallSliding)
-            {
-                rigidbody2d.velocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-            }
-            else if (wallSliding)
-            {
-                rigidbody2d.velocity = new Vector2(rigidbody2d.velocity.x, -wallSlideSpeed);
-            }
-        }
-        else if (rigidbody2d.velocity.y > 0 && !Input.GetKey(KeyCode.C))      //zıpladıysa
-        {
-            rigidbody2d.velocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
-        }
-    }
-
-    private void CheckWallGrab()
-    {
-        if (wallGrabbing)
-        {
-            rigidbody2d.gravityScale = 0;
-            canMove = false;
-            canFlip = false;
-            rigidbody2d.velocity = new Vector2(0, 0);
-        }
-        else
-        {
-            canMove = true;
-            canFlip = true;
-            rigidbody2d.gravityScale = 1;
         }
     }
     private void CheckMovementDirection()
@@ -418,15 +346,70 @@ public class PlayerController : MonoBehaviour, ICollider
             Flip();
         }
     }
-    public void Flip()
+    private void CheckIfCanJump() //zıplayabiliyor mu
     {
-        if (!wallSliding)
+        if (jumpTimer <= 0f && amountOfJumpsLeft > 0)
         {
-            isFacingRight = !isFacingRight;
-            transform.Rotate(0f, 180f, 0f);
+            canJump = true;
         }
-
+        else
+        {
+            canJump = false;
+        }
     }
+    private void CheckLedgeClimb()
+    {
+        ledgePos = isFacingRight ? new Vector2(transform.localPosition.x + .4f, transform.localPosition.y) : new Vector2(transform.localPosition.x + -.4f, transform.localPosition.y);
+        if (CheckTouchingLedge() && !isClimbingLedge)
+        {
+            if (rightLedgeCheck && isFacingRight)
+            {
+                isClimbingLedge = true;
+                ledgePos1 = new Vector2(Mathf.Floor(ledgePos.x + wallCheckDistance) - ledgeClimbXOffset1, Mathf.Floor(ledgePos.y) + ledgeClimbYOffset1);
+                ledgePos2 = new Vector2(Mathf.Floor(ledgePos.x + wallCheckDistance) + ledgeClimbXOffset2, Mathf.Floor(ledgePos.y) + ledgeClimbYOffset2);
+            }
+            else if (leftLedgeCheck && !isFacingRight)
+            {
+                isClimbingLedge = true;
+                ledgePos1 = new Vector2(Mathf.Ceil(ledgePos.x - wallCheckDistance) + ledgeClimbXOffset1, Mathf.Floor(ledgePos.y) + ledgeClimbYOffset1);
+                ledgePos2 = new Vector2(Mathf.Ceil(ledgePos.x - wallCheckDistance) - ledgeClimbXOffset2, Mathf.Floor(ledgePos.y) + ledgeClimbYOffset2);
+            }
+
+
+
+            animator.SetBool("isClimbingLedge", isClimbingLedge);
+        }
+        if (isClimbingLedge)
+        {
+            canMove = false;
+            DisableFlip();
+            transform.position = ledgePos1; //animasyon başlar transformun ilk framei
+        }
+    }
+
+    //---------------Stipe Methods--------------------------------------------------------
+
+    private void AttemptToDash() //dash atılınca
+    {
+        isDashing = true;
+        dashTimeLeft = dashTime;
+        lastDash = Time.time;
+
+        PlayerAfterImagePool.Instance.GetFromPool();
+        lastImageXpos = transform.position.x;
+    }
+    public void FinishLedgeClimb()
+    {
+        isClimbingLedge = false;
+        transform.position = ledgePos2;
+        canMove = true;
+        EnableFlip();
+        animator.SetBool("isClimbingLedge", isClimbingLedge);
+    }
+
+
+    //--------------FixedUpdate Methods--------------------------------------------------------
+
     private void ApplyMovement()
     {
         if (canMove)
@@ -459,6 +442,88 @@ public class PlayerController : MonoBehaviour, ICollider
             }
         }
     }
+    private void ApplyJumping()
+    {
+        if (rigidbody2d.velocity.y < 0)      //düşüyorsa
+        {
+            if (!wallSliding)
+            {
+                rigidbody2d.velocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+            }
+            else if (wallSliding)
+            {
+                rigidbody2d.velocity = new Vector2(rigidbody2d.velocity.x, -wallSlideSpeed);
+            }
+        }
+        else if (rigidbody2d.velocity.y > 0 && !Input.GetKey(KeyCode.C))      //zıpladıysa
+        {
+            rigidbody2d.velocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
+        }
+    }
+    private void ApplyWallGrabbing()
+    {
+        if (wallGrabbing)
+        {
+            rigidbody2d.gravityScale = 0;
+            canMove = false;
+            canFlip = false;
+            rigidbody2d.velocity = new Vector2(0, 0);
+        }
+        else
+        {
+            canMove = true;
+            canFlip = true;
+            rigidbody2d.gravityScale = 1;
+        }
+    }
+    private void ApplyDash()
+    {
+        if (isDashing)
+        {
+            if (dashTimeLeft > 0)
+            {
+                canMove = false;
+                canFlip = false;
+
+                rigidbody2d.velocity = new Vector2(dashSpeed * x, 0);
+                dashTimeLeft -= Time.deltaTime;
+
+                if (Mathf.Abs(transform.position.x - lastImageXpos) > distanceBetweenImages)
+                {
+                    PlayerAfterImagePool.Instance.GetFromPool();
+                    lastImageXpos = transform.position.x;
+                }
+            }
+            if (dashTimeLeft <= 0 || CheckOnWall())
+            {
+                isDashing = false;
+                canMove = true;
+                canFlip = true;
+            }
+
+        }
+    }
+
+
+    //--------------Other Methods--------------------------------------------------------
+
+    private void Flip()
+    {
+        if (!wallSliding && canFlip && !isClimbingLedge)
+        {
+            isFacingRight = !isFacingRight;
+            transform.Rotate(0f, 180f, 0f);
+        }
+
+    }
+    private void EnableFlip()
+    {
+        canFlip = true;
+    }
+    private void DisableFlip()
+    {
+        canFlip = false;
+    }
     private bool CheckOnWall()
     {
         if (onRightWall || onLeftWall)
@@ -467,59 +532,34 @@ public class PlayerController : MonoBehaviour, ICollider
         }
         else return false;
     }
-
-    private bool IsTouchingLedge()
+    private bool CheckTouchingLedge()
     {
         if ((leftLedgeCheck || rightLedgeCheck)) { return true; }
         else return false;
     }
-    private void CheckLedgeClimb()
+    private void Jump()
     {
+        amountOfJumpsLeft--;
+        jumpTimer = jumpTimerSet;
+        canJump = false;
+        rigidbody2d.velocity = jumpForce * (Vector2.up);
 
-        if (IsTouchingLedge() && !isClimbingLedge)
-        {
-            if (rightLedgeCheck && isFacingRight)
-            {
-                isClimbingLedge = true;
-                ledgePos1 = new Vector2(Mathf.Floor(ledgePosBot.x + wallCheckDistance) - ledgeClimbXOffset1, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset1);
-                ledgePos2 = new Vector2(Mathf.Floor(ledgePosBot.x + wallCheckDistance) + ledgeClimbXOffset2, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset2);
-            }
-            else if (leftLedgeCheck && !isFacingRight)
-            {
-                isClimbingLedge = true;
-                ledgePos1 = new Vector2(Mathf.Ceil(ledgePosBot.x - wallCheckDistance) + ledgeClimbXOffset1, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset1);
-                ledgePos2 = new Vector2(Mathf.Ceil(ledgePosBot.x - wallCheckDistance) - ledgeClimbXOffset2, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset2);
-            }
-            canMove = false;
-            canFlip = false;
-            
+    }
 
-            animator.SetBool("isClimbingLedge", isClimbingLedge);
-        }
-        if (isClimbingLedge)
-        {
-            transform.position = ledgePos1; //animasyon başlar transformun ilk framei
-        }
-    }
-    public void FinishLedgeClimb()
-    {
-        isClimbingLedge = false;
-        transform.position = ledgePos2;
-        canMove = true;
-        canFlip = true;
-        animator.SetBool("isClimbingLedge", isClimbingLedge);
-    }
 }
 
-
-//private void CheckIfCanJump()
+//if (rigidbody2d.velocity.x < 0 )
 //{
-//    if (isGrounded && rigidbody2d.velocity.y <= 0)
-//    {
-//        canJump = true;
-//    }
-//    else
-//    {
-//        canJump = false;
-//    }
+//    canMove = false;
+//    canFlip = false;
+//    canJump = false;
+//    turnTimer = turnTimerSet;
+//}
+
+//if (rigidbody2d.velocity.x > 0)
+//{
+//    canMove = false;
+//    DisableFlip();
+//    canJump = false;
+//    turnTimer = turnTimerSet;
 //}

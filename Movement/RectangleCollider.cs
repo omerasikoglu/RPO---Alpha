@@ -7,7 +7,7 @@ public class RectangleCollider : MonoBehaviour
     [SerializeField] private LayerMask platformLayer;
 
     private BoxCollider2D boxCollider2d;
-    private float wallCheckDistance = .3f; 
+    private float wallCheckDistance = .3f;
 
     private void Awake()
     {
@@ -23,9 +23,9 @@ public class RectangleCollider : MonoBehaviour
     }
     private bool RightLedgeCheck()
     {
-        RaycastHit2D raycastHitDown = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4*2, 0), new Vector3(boxCollider2d.bounds.extents.x,.1f/*boxCollider2d.bounds.extents.y/4*2*/,0), 0f, Vector2.right, wallCheckDistance, platformLayer);
+        RaycastHit2D raycastHitDown = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 2, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y/4*2*/, 0), 0f, Vector2.right, wallCheckDistance, platformLayer);
         RaycastHit2D raycastHitUp = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 3, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y / 4 * 2*/, 0), 0f, Vector2.right, wallCheckDistance, platformLayer);
-        if (raycastHitDown.collider != null && raycastHitUp.collider == null )
+        if (raycastHitDown.collider != null && raycastHitUp.collider == null)
         {
             return true;
         }
@@ -33,7 +33,7 @@ public class RectangleCollider : MonoBehaviour
     }
     private bool LeftLedgeCheck()
     {
-        RaycastHit2D raycastHitDown = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4*2, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y / 4 * 2*/, 0), 0f, Vector2.left, wallCheckDistance, platformLayer);
+        RaycastHit2D raycastHitDown = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 2, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y / 4 * 2*/, 0), 0f, Vector2.left, wallCheckDistance, platformLayer);
         RaycastHit2D raycastHitUp = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 3, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y / 4 * 2*/, 0), 0f, Vector2.left, wallCheckDistance, platformLayer);
         if (raycastHitDown.collider != null && raycastHitUp.collider == null)
         {
@@ -43,7 +43,7 @@ public class RectangleCollider : MonoBehaviour
     }
     private bool OnRightWall()
     {
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), boxCollider2d.bounds.size, 0f, Vector2.right, wallCheckDistance, platformLayer);
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center, boxCollider2d.bounds.size /*- new Vector3(0, .2f, 0)*/, 0f, Vector2.right, wallCheckDistance, platformLayer);
         Color rayColor;
         if (raycastHit.collider != null) rayColor = Color.yellow;
         else rayColor = Color.red;
@@ -55,7 +55,7 @@ public class RectangleCollider : MonoBehaviour
     }
     private bool OnLeftWall()
     {
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), boxCollider2d.bounds.size, 0f, Vector2.left, wallCheckDistance, platformLayer);
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center, boxCollider2d.bounds.size /*- new Vector3(0, .2f, 0)*/, 0f, Vector2.left, wallCheckDistance, platformLayer);
         Color rayColor;
         if (raycastHit.collider != null) rayColor = Color.cyan;
         else rayColor = Color.red;
@@ -67,8 +67,8 @@ public class RectangleCollider : MonoBehaviour
     }
     private bool IsGrounded()
     {
-        float extraHeightText = .2f;
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center, boxCollider2d.bounds.size, 0f, Vector2.down, extraHeightText, platformLayer);
+        float extraHeightText = .3f;
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center, boxCollider2d.bounds.size - new Vector3(.2f, 0f, 0f), 0f, Vector2.down, extraHeightText, platformLayer);
         Color rayColor;
         if (raycastHit.collider != null) rayColor = Color.green;
         else rayColor = Color.red;

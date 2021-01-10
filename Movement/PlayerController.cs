@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour, ICollider
 {
+
     private Rigidbody2D rigidbody2d;
 
     //[SerializeField] private SpriteAnimator spriteAnimator;
@@ -36,11 +37,14 @@ public class PlayerController : MonoBehaviour, ICollider
     //vars
     private float x;   //girilen inputun yönünü belirlemek için
     private bool isWalking;
-    private bool isFacingRight=true;
+    private bool isFacingRight = true;
     private bool canFlip;
 
     //consts
     private const float movementSpeed = 10f;
+
+    private float turnTimer;
+    private float turnTimerSet = 1f;
 
     #endregion
 
@@ -52,18 +56,24 @@ public class PlayerController : MonoBehaviour, ICollider
     private const float lowJumpMultiplier = 6f;
     private const float wallJumpMultiplier = 6f;
 
+
+
     private int amountOfJumpsLeft;
-    public int amountOfJumps = 2;
-    public float jumpTimerSet = 0.15f;
-    public float turnTimerSet = 0.1f;
-    public float wallJumpTimerSet = 0.5f;
+    private int amountOfJumps = 2;
+
+    private float jumpTimer;
+    private float jumpTimerSet = 0.15f;
+
+    private float wallJumpTimer;
+    private float wallJumpTimerSet = 0.5f;
     private bool canJump;
-   
+
     #endregion
 
     #region Wall-e
 
     //vars
+    private bool canGrabWall = true;
     private bool wallGrabbing;
     private bool wallSliding;
     private bool canJumpFromRight;
@@ -78,17 +88,27 @@ public class PlayerController : MonoBehaviour, ICollider
     public Vector2 wallHopDirection;
     public Vector2 wallJumpDirection;
 
-    private bool isTouchingLedge;
-    private bool canClimbLedge = false;
-    private bool ledgeDetected;
+    #endregion
+
+    #region Ledge
+
+    public Transform ledgePosBotTransform;
+
+    private bool isClimbingLedge = false;
 
     private Vector2 ledgePosBot;
     private Vector2 ledgePos1;
     private Vector2 ledgePos2;
-    public float ledgeClimbXOffset1 = 0f;
-    public float ledgeClimbYOffset1 = 0f;
-    public float ledgeClimbXOffset2 = 0f;
-    public float ledgeClimbYOffset2 = 0f;
+
+
+    private float wallCheckDistance = .3f; //rectangle collider'da da tanımlı
+
+    private float ledgeClimbXOffset1 = 0.5f;
+    private float ledgeClimbYOffset1 = 0f;
+
+    private float ledgeClimbXOffset2 = 0.5f;
+    private float ledgeClimbYOffset2 = 2f;
+
     #endregion
 
     #region Incoming 
@@ -96,7 +116,7 @@ public class PlayerController : MonoBehaviour, ICollider
 
     //eklenecekler
     private bool canMove = true;
-    private bool wallJumped = false;
+    private bool wallJumping = false;
     private bool isDashing = false;
     private Vector2 velocity;
 
@@ -108,6 +128,8 @@ public class PlayerController : MonoBehaviour, ICollider
     private bool isGrounded;
     private bool onRightWall;
     private bool onLeftWall;
+    private bool rightLedgeCheck;
+    private bool leftLedgeCheck;
 
     //Interface Implements
     public void SetBoolIsGrounded(bool isGrounded)
@@ -124,6 +146,14 @@ public class PlayerController : MonoBehaviour, ICollider
     {
         this.onLeftWall = onLeftWall;
     }
+    public void SetBoolOnRightLedgeCheck(bool rightLedgeCheck)
+    {
+        this.rightLedgeCheck = rightLedgeCheck;
+    }
+    public void SetBoolOnLeftLedgeCheck(bool leftLedgeCheck)
+    {
+        this.leftLedgeCheck = leftLedgeCheck;
+    }
     #endregion
 
     private void Awake()
@@ -136,21 +166,39 @@ public class PlayerController : MonoBehaviour, ICollider
         amountOfJumpsLeft = amountOfJumps;
         wallHopDirection.Normalize();
         wallJumpDirection.Normalize();
+        canMove = true; canFlip = true;
+
+
+
     }
     private void Update()
     {
-        wallSliding = false;
-        isWalking = false;
-        wallGrabbing = false;
-
+        //Time.timeScale = .1f;
+        ledgePosBot = ledgePosBotTransform.position;
+        //wallSliding = false;
+        //isWalking = false;
+        //wallGrabbing = false;
+        //ledgePosBot = transform.position + new Vector3(0f, .5f, 0f);
         x = Input.GetAxisRaw("Horizontal");    //yürüme
 
         UpdateAnimations();
         CheckInputs();
-        CheckIfCanJump();
         CheckWallGrab();
         CheckMovementDirection();
         CheckDash();
+        CheckLedgeClimb();
+
+        if (turnTimer >= 0)
+        {
+            turnTimer -= Time.deltaTime;
+            if (turnTimer <= 0)
+            {
+                canMove = true;
+                canFlip = true;
+                canJump = true;
+            }
+        }
+
     }
     private void FixedUpdate()
     {
@@ -175,8 +223,12 @@ public class PlayerController : MonoBehaviour, ICollider
         if (isGrounded)
         {
             canJump = true;
+            amountOfJumpsLeft = amountOfJumps;
             canJumpFromRight = true;
             canJumpFromLeft = true;
+            wallSliding = false;
+
+
 
             if (x != 0) //yürüyor
             {
@@ -192,23 +244,31 @@ public class PlayerController : MonoBehaviour, ICollider
             {
                 rigidbody2d.velocity += jumpForce * (Vector2.up);
                 amountOfJumpsLeft--;
-                
+
             }
 
         }
         else if (!isGrounded)   //yere değmiyorsa
         {
+
             if (onRightWall)
             {
-                if (Input.GetKey(KeyCode.Z)) wallGrabbing = true;
+                if (Input.GetKey(KeyCode.Z) && canGrabWall)
+                {
+                    wallGrabbing = true;
+                }
                 else
                 {
                     wallGrabbing = false;
                 }
 
-                if (x == 1 && rigidbody2d.velocity.y < 0) //duvarda sağa tıklıyorsa
+                if (x == 1 && rigidbody2d.velocity.y < -2f && !isClimbingLedge) //duvarda sağa tıklıyorsa
                 {
                     wallSliding = true;
+                }
+                else
+                {
+                    wallSliding = false;
                 }
 
                 if (canJumpFromRight)
@@ -220,19 +280,34 @@ public class PlayerController : MonoBehaviour, ICollider
                         canJumpFromRight = false;
                         canJumpFromLeft = true;
                     }
+                    if (x < 0)
+                    {
+                        canMove = false;
+                        canFlip = false;
+                        canJump = false;
+                        turnTimer = turnTimerSet;
+                    }
+
                 }
             }
             else if (onLeftWall)
             {
-                if (Input.GetKey(KeyCode.Z)) wallGrabbing = true;
+                if (Input.GetKey(KeyCode.Z)&&canGrabWall)
+                {
+                    wallGrabbing = true;
+                }
                 else
                 {
                     wallGrabbing = false;
                 }
 
-                if (x == -1 && rigidbody2d.velocity.y < 0) //duvarda sola tıklıyorsa
+                if (x == -1 && rigidbody2d.velocity.y < -2f && !isClimbingLedge) //duvarda sola tıklıyorsa
                 {
                     wallSliding = true;
+                }
+                else
+                {
+                    wallSliding = false;
                 }
 
 
@@ -244,9 +319,16 @@ public class PlayerController : MonoBehaviour, ICollider
                         canJumpFromRight = true;
                         canJumpFromLeft = false;
                     }
+                    if (x > 0)
+                    {
+                        canMove = false;
+                        canFlip = false;
+                        canJump = false;
+                        turnTimer = turnTimerSet;
+                    }
                 }
             }
-            else if (!IsTouchingWall())
+            else if (!CheckOnWall())
             {
                 canJumpFromRight = true;
                 canJumpFromLeft = true;
@@ -272,7 +354,7 @@ public class PlayerController : MonoBehaviour, ICollider
                 canMove = false;
                 canFlip = false;
 
-                rigidbody2d.velocity = new Vector2(dashSpeed * x, 0); //add:facingDirection <== x yerine
+                rigidbody2d.velocity = new Vector2(dashSpeed * x, 0);
                 dashTimeLeft -= Time.deltaTime;
 
                 if (Mathf.Abs(transform.position.x - lastImageXpos) > distanceBetweenImages)
@@ -281,7 +363,7 @@ public class PlayerController : MonoBehaviour, ICollider
                     lastImageXpos = transform.position.x;
                 }
             }
-            if (dashTimeLeft <= 0 || IsTouchingWall())
+            if (dashTimeLeft <= 0 || CheckOnWall())
             {
                 isDashing = false;
                 canMove = true;
@@ -308,25 +390,30 @@ public class PlayerController : MonoBehaviour, ICollider
             rigidbody2d.velocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
         }
     }
+
     private void CheckWallGrab()
     {
         if (wallGrabbing)
         {
             rigidbody2d.gravityScale = 0;
-            rigidbody2d.velocity = new Vector2(rigidbody2d.velocity.x, 0);
+            canMove = false;
+            canFlip = false;
+            rigidbody2d.velocity = new Vector2(0, 0);
         }
         else
         {
+            canMove = true;
+            canFlip = true;
             rigidbody2d.gravityScale = 1;
         }
     }
     private void CheckMovementDirection()
     {
-        if (isFacingRight && x < 0)
+        if (isFacingRight && x < 0 && canFlip)
         {
             Flip();
         }
-        else if (!isFacingRight && x > 0)
+        else if (!isFacingRight && x > 0 && canFlip)
         {
             Flip();
         }
@@ -372,7 +459,7 @@ public class PlayerController : MonoBehaviour, ICollider
             }
         }
     }
-    private bool IsTouchingWall()
+    private bool CheckOnWall()
     {
         if (onRightWall || onLeftWall)
         {
@@ -380,15 +467,59 @@ public class PlayerController : MonoBehaviour, ICollider
         }
         else return false;
     }
-    private void CheckIfCanJump()
+
+    private bool IsTouchingLedge()
     {
-        if (isGrounded && rigidbody2d.velocity.y<=0)
+        if ((leftLedgeCheck || rightLedgeCheck)) { return true; }
+        else return false;
+    }
+    private void CheckLedgeClimb()
+    {
+
+        if (IsTouchingLedge() && !isClimbingLedge)
         {
-            canJump = true;
+            if (rightLedgeCheck && isFacingRight)
+            {
+                isClimbingLedge = true;
+                ledgePos1 = new Vector2(Mathf.Floor(ledgePosBot.x + wallCheckDistance) - ledgeClimbXOffset1, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset1);
+                ledgePos2 = new Vector2(Mathf.Floor(ledgePosBot.x + wallCheckDistance) + ledgeClimbXOffset2, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset2);
+            }
+            else if (leftLedgeCheck && !isFacingRight)
+            {
+                isClimbingLedge = true;
+                ledgePos1 = new Vector2(Mathf.Ceil(ledgePosBot.x - wallCheckDistance) + ledgeClimbXOffset1, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset1);
+                ledgePos2 = new Vector2(Mathf.Ceil(ledgePosBot.x - wallCheckDistance) - ledgeClimbXOffset2, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset2);
+            }
+            canMove = false;
+            canFlip = false;
+            
+
+            animator.SetBool("isClimbingLedge", isClimbingLedge);
         }
-        else
+        if (isClimbingLedge)
         {
-            canJump = false;
+            transform.position = ledgePos1; //animasyon başlar transformun ilk framei
         }
     }
+    public void FinishLedgeClimb()
+    {
+        isClimbingLedge = false;
+        transform.position = ledgePos2;
+        canMove = true;
+        canFlip = true;
+        animator.SetBool("isClimbingLedge", isClimbingLedge);
+    }
 }
+
+
+//private void CheckIfCanJump()
+//{
+//    if (isGrounded && rigidbody2d.velocity.y <= 0)
+//    {
+//        canJump = true;
+//    }
+//    else
+//    {
+//        canJump = false;
+//    }
+//}

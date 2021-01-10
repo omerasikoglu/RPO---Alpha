@@ -7,7 +7,7 @@ public class RectangleCollider : MonoBehaviour
     [SerializeField] private LayerMask platformLayer;
 
     private BoxCollider2D boxCollider2d;
-    private float extraWidth = .3f;
+    private float wallCheckDistance = .3f; 
 
     private void Awake()
     {
@@ -18,28 +18,50 @@ public class RectangleCollider : MonoBehaviour
         GetComponent<ICollider>().SetBoolIsGrounded(IsGrounded());
         GetComponent<ICollider>().SetBoolOnRightWall(OnRightWall());
         GetComponent<ICollider>().SetBoolOnLeftWall(OnLeftWall());
+        GetComponent<ICollider>().SetBoolOnRightLedgeCheck(RightLedgeCheck());
+        GetComponent<ICollider>().SetBoolOnLeftLedgeCheck(LeftLedgeCheck());
+    }
+    private bool RightLedgeCheck()
+    {
+        RaycastHit2D raycastHitDown = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4*2, 0), new Vector3(boxCollider2d.bounds.extents.x,.1f/*boxCollider2d.bounds.extents.y/4*2*/,0), 0f, Vector2.right, wallCheckDistance, platformLayer);
+        RaycastHit2D raycastHitUp = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 3, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y / 4 * 2*/, 0), 0f, Vector2.right, wallCheckDistance, platformLayer);
+        if (raycastHitDown.collider != null && raycastHitUp.collider == null )
+        {
+            return true;
+        }
+        else return false;
+    }
+    private bool LeftLedgeCheck()
+    {
+        RaycastHit2D raycastHitDown = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4*2, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y / 4 * 2*/, 0), 0f, Vector2.left, wallCheckDistance, platformLayer);
+        RaycastHit2D raycastHitUp = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 3, 0), new Vector3(boxCollider2d.bounds.extents.x, .1f/*boxCollider2d.bounds.extents.y / 4 * 2*/, 0), 0f, Vector2.left, wallCheckDistance, platformLayer);
+        if (raycastHitDown.collider != null && raycastHitUp.collider == null)
+        {
+            return true;
+        }
+        else return false;
     }
     private bool OnRightWall()
     {
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4), boxCollider2d.bounds.size, 0f, Vector2.right, extraWidth, platformLayer);
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), boxCollider2d.bounds.size, 0f, Vector2.right, wallCheckDistance, platformLayer);
         Color rayColor;
         if (raycastHit.collider != null) rayColor = Color.yellow;
         else rayColor = Color.red;
-        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3(0, boxCollider2d.bounds.extents.y), Vector2.right * (boxCollider2d.bounds.extents.x + extraWidth), rayColor);
-        Debug.DrawRay(boxCollider2d.bounds.center - new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), Vector2.right * (boxCollider2d.bounds.extents.x + extraWidth), rayColor);
-        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3((boxCollider2d.bounds.extents.x) + extraWidth, boxCollider2d.bounds.extents.y), Vector2.down * ((3 * boxCollider2d.bounds.extents.y) / 2), rayColor);
+        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3(0, boxCollider2d.bounds.extents.y), Vector2.right * (boxCollider2d.bounds.extents.x + wallCheckDistance), rayColor);
+        Debug.DrawRay(boxCollider2d.bounds.center - new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), Vector2.right * (boxCollider2d.bounds.extents.x + wallCheckDistance), rayColor);
+        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3((boxCollider2d.bounds.extents.x) + wallCheckDistance, boxCollider2d.bounds.extents.y), Vector2.down * ((3 * boxCollider2d.bounds.extents.y) / 2), rayColor);
 
         return raycastHit.collider != null;
     }
     private bool OnLeftWall()
     {
-        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4), boxCollider2d.bounds.size, 0f, Vector2.left, extraWidth, platformLayer);
+        RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), boxCollider2d.bounds.size, 0f, Vector2.left, wallCheckDistance, platformLayer);
         Color rayColor;
         if (raycastHit.collider != null) rayColor = Color.cyan;
         else rayColor = Color.red;
-        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3(0, boxCollider2d.bounds.extents.y), Vector2.left * (boxCollider2d.bounds.extents.x + extraWidth), rayColor);
-        Debug.DrawRay(boxCollider2d.bounds.center - new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), Vector2.left * (boxCollider2d.bounds.extents.x + extraWidth), rayColor);
-        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3((-boxCollider2d.bounds.extents.x) - extraWidth, boxCollider2d.bounds.extents.y), Vector2.down * ((3 * boxCollider2d.bounds.extents.y) / 2), rayColor);
+        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3(0, boxCollider2d.bounds.extents.y), Vector2.left * (boxCollider2d.bounds.extents.x + wallCheckDistance), rayColor);
+        Debug.DrawRay(boxCollider2d.bounds.center - new Vector3(0, (boxCollider2d.bounds.extents.y) / 2), Vector2.left * (boxCollider2d.bounds.extents.x + wallCheckDistance), rayColor);
+        Debug.DrawRay(boxCollider2d.bounds.center + new Vector3((-boxCollider2d.bounds.extents.x) - wallCheckDistance, boxCollider2d.bounds.extents.y), Vector2.down * ((3 * boxCollider2d.bounds.extents.y) / 2), rayColor);
 
         return raycastHit.collider != null;
     }
@@ -58,3 +80,29 @@ public class RectangleCollider : MonoBehaviour
         return raycastHit.collider != null;
     }
 }
+//private void OnDrawGizmos()
+//{
+//    Gizmos.DrawLine(wallCheck.position, new Vector3(wallCheck.position.x + wallCheckDistance, wallCheck.position.y, wallCheck.position.z));
+//}
+
+//ESKİSİ
+//private bool RightLedgeCheck()
+//{
+//    RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center - new Vector3(0, (boxCollider2d.bounds.extents.y) / 4, 0), new Vector3(boxCollider2d.bounds.extents.x, boxCollider2d.bounds.extents.y / 4 * 3, 0), 0f, Vector2.right, wallCheckDistance, platformLayer);
+//    RaycastHit2D raycastHit_2 = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 3, 0), new Vector3(boxCollider2d.bounds.extents.x, boxCollider2d.bounds.extents.y / 4 * 2, 0), 0f, Vector2.right, wallCheckDistance, platformLayer);
+//    if (raycastHit.collider != null && raycastHit_2.collider == null)
+//    {
+//        return true;
+//    }
+//    else return false;
+//}
+//private bool LeftLedgeCheck()
+//{
+//    RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center - new Vector3(0, (boxCollider2d.bounds.extents.y) / 4, 0), new Vector3(boxCollider2d.bounds.extents.x, boxCollider2d.bounds.extents.y / 4 * 3, 0), 0f, Vector2.left, wallCheckDistance, platformLayer);
+//    RaycastHit2D raycastHit_2 = Physics2D.BoxCast(boxCollider2d.bounds.center + new Vector3(0, (boxCollider2d.bounds.extents.y) / 4 * 3, 0), new Vector3(boxCollider2d.bounds.extents.x, boxCollider2d.bounds.extents.y / 4 * 2, 0), 0f, Vector2.left, wallCheckDistance, platformLayer);
+//    if (raycastHit.collider != null && raycastHit_2.collider == null)
+//    {
+//        return true;
+//    }
+//    else return false;
+//}

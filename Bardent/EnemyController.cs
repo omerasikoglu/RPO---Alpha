@@ -36,7 +36,7 @@ public class EnemyController : MonoBehaviour
        deathBloodParticle;
 
     private int
-        facingDirection,
+        facingDirection , //sağa bakmak
         damageDirection;
 
     private Vector2 movement;

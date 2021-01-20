@@ -6,21 +6,26 @@ public class PlayerCombatController : MonoBehaviour
 {
     [SerializeField] private LayerMask whatIsDamageable;
 
+
+    [SerializeField] private float attack1Radius;
     private Transform attack1HitBoxPos;
-    
-    private bool combatEnabled;
+    [SerializeField] private float attack1Damage;
+    [SerializeField] private float inputTimer;
+
+    private bool combatEnabled = true;
     private bool gotInput;
     private bool isAttacking;
     private bool isFirstAttack;
 
-    private float lastInputTime;
-    private float inputTimer;
+
+    private float lastInputTime = Mathf.NegativeInfinity;
+
 
     private Animator animator;
 
     private void Awake()
     {
-        attack1HitBoxPos = transform.Find("attack1HitBox");
+        attack1HitBoxPos = transform.Find("Attack1HitBoxPos");
     }
     private void Start()
     {
@@ -63,18 +68,26 @@ public class PlayerCombatController : MonoBehaviour
         }
     }
 
-    private void CheckAttackHitBox()
+    private void CheckAttackHitBox() //animatorden ulaşılıyo
     {
-        Collider2D[] detectedObjects = Physics2D.OverlapCircleAll(Vector2.zero, 1f);
+        Collider2D[] detectedObjects = Physics2D.OverlapCircleAll(attack1HitBoxPos.position, attack1Radius, whatIsDamageable);
+
+        foreach (Collider2D collider2d in detectedObjects)
+        {
+          
+            HealthSystem healthSystem = collider2d.transform.parent.transform.GetComponent<HealthSystem>();
+            if (healthSystem != null)
+            {
+                healthSystem.Damage(1);
+            }
+        }
     }
-
-
-
-
-
-
-
-
-
-
+    private void FinishAttack1() //animatorden ulaşılıyo
+    {
+        isAttacking = false;
+        animator.SetBool("isAttacking", isAttacking);
+        animator.SetBool("attack1", false);
+    }
 }
+
+//collider2d.transform.parent.GetComponent<HealthSystem>().SendMessage("Metodd");

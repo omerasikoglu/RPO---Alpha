@@ -2,14 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class E1_MoveState : MoveState
+public class E1_ChargeState : ChargeState
 {
     private Enemy1 enemy;
-
-    public E1_MoveState(Entity entity, FiniteStateMachine stateMachine, string animatorBoolName, D_MoveState stateData, Enemy1 enemy)
+    public E1_ChargeState(Entity entity, FiniteStateMachine stateMachine, string animatorBoolName, D_ChargeState stateData,Enemy1 enemy) 
         : base(entity, stateMachine, animatorBoolName, stateData)
     {
         this.enemy = enemy;
+    }
+
+    public override void DoChecks()
+    {
+        base.DoChecks();
     }
 
     public override void Enter()
@@ -26,15 +30,17 @@ public class E1_MoveState : MoveState
     {
         base.LogicUpdate();
 
-        if (isPlayerInMinAgroRange)
+        if (!isDetectingLedge||isDetectingWall)
         {
-            stateMachine.ChangeState(enemy.playerDetectedState);
+            stateMachine.ChangeState(enemy.lookForPlayerState);
         }
-        
-        else if (isDetectingWall || !isDetectingLedge) //duvar yoksa veya uçurum varsa geri dön
+
+        else if (isChargeTimeOver)
         {
-            enemy.idleState.SetFlipAfterIdle(true);
-            stateMachine.ChangeState(enemy.idleState);
+            if (isPlayerInMinAgroRange)
+            {
+                stateMachine.ChangeState(enemy.playerDetectedState);
+            }
         }
     }
 
@@ -42,4 +48,5 @@ public class E1_MoveState : MoveState
     {
         base.PhysicsUpdate();
     }
+
 }

@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MoveState : State
+public class PlayerDetectedState : State
 {
-    protected D_MoveState stateData;
+    protected D_PlayerDetectedState stateData;
 
-    protected bool isDetectingWall;
-    protected bool isDetectingLedge;
     protected bool isPlayerInMinAgroRange;
+    protected bool isPlayerInMaxAgroRange;
+    protected bool performLongRangeAction;
 
 
-    public MoveState(Entity entity, FiniteStateMachine stateMachine, string animatorBoolName, D_MoveState stateData) 
+    public PlayerDetectedState(Entity entity, FiniteStateMachine stateMachine, string animatorBoolName, D_PlayerDetectedState stateData)
         : base(entity, stateMachine, animatorBoolName)
     {
         this.stateData = stateData;
@@ -20,16 +20,16 @@ public class MoveState : State
     public override void DoChecks()
     {
         base.DoChecks();
-        isDetectingWall = entity.CheckWall();
-        isDetectingLedge = entity.CheckLedge();
         isPlayerInMinAgroRange = entity.CheckPlayerInMinAgroRange();
+        isPlayerInMaxAgroRange = entity.CheckPlayerInMaxAgroRange();
     }
 
     public override void Enter()
     {
         base.Enter();
-        entity.SetVelocity(stateData.movementSpeed);
-        
+
+        performLongRangeAction = false;
+        entity.SetVelocity(0f);
     }
 
     public override void Exit()
@@ -40,6 +40,10 @@ public class MoveState : State
     public override void LogicUpdate()
     {
         base.LogicUpdate();
+        if (Time.time >= startTime + stateData.longRangedActionTime)
+        {
+            performLongRangeAction = true;
+        }
     }
 
     public override void PhysicsUpdate()

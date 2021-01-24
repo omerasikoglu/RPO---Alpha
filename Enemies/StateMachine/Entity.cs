@@ -16,10 +16,11 @@ public class Entity : MonoBehaviour
 
     private Vector2 velocityWorkspace;
 
-
+    [Header("[Checks]")]
     [SerializeField] private Transform wallCheck;
     [SerializeField] private Transform ledgeCheck;
-
+    [SerializeField] private Transform playerCheck;
+    
     public virtual void Start()
     {
         facingDirection = 1;
@@ -38,8 +39,6 @@ public class Entity : MonoBehaviour
     public virtual void FixedUpdate()
     {
         stateMachine.currentState.PhysicsUpdate();
-
-        Debug.Log("Ledge" + CheckLedge()+ "Wall" + CheckWall());
     }
     public virtual void SetVelocity(float velocity)
     {
@@ -66,6 +65,21 @@ public class Entity : MonoBehaviour
         aliveGO.transform.Rotate(0f, 180f, 0f);
         
     }
+    public virtual bool CheckPlayerInMinAgroRange()
+    {
+        return Physics2D.Raycast(playerCheck.position, aliveGO.transform.right, entityData.minAgroRange, entityData.whatIsPlayer);
+    }
+    public virtual bool CheckPlayerInMaxAgroRange()
+    {
+        return Physics2D.Raycast(playerCheck.position, aliveGO.transform.right, entityData.maxAgroRange, entityData.whatIsPlayer);
+    }
+
+
+
+
+
+
+
     public virtual void OnDrawGizmos()
     {
       

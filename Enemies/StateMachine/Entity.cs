@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class Entity : MonoBehaviour
 {
@@ -14,13 +15,19 @@ public class Entity : MonoBehaviour
     public GameObject aliveGO { get; private set; }
     public BoxCollider2D boxCollider2d { get; private set; }
 
-    private Vector2 velocityWorkspace;
+    //public HealthSystem healthSystem { get; private set; }
+    public AnimationToStateMachine animationToStateMachine { get; private set; } //animator bu scrittin çocugunda oi. extra script yazdık
+
+    private Vector2 movementVelocity;
+    private int currentHealth;
+    private int lastDamageDirection;
+
 
     [Header("[Checks]")]
     [SerializeField] private Transform wallCheck;
     [SerializeField] private Transform ledgeCheck;
     [SerializeField] private Transform playerCheck;
-    
+
     public virtual void Start()
     {
         facingDirection = 1;
@@ -29,9 +36,28 @@ public class Entity : MonoBehaviour
         rigidbody2d = aliveGO.GetComponent<Rigidbody2D>();
         animator = aliveGO.GetComponent<Animator>();
         boxCollider2d = aliveGO.GetComponent<BoxCollider2D>();
+        animationToStateMachine = aliveGO.GetComponent<AnimationToStateMachine>();
+        //healthSystem = aliveGO.GetComponent<HealthSystem>();
+
+        //healthSystem.SetHealthAmountMax(entityData.healthAmountMax, false);
+        currentHealth = entityData.healthAmountMax;
+
+        //healthSystem.OnDied += HealthSystem_OnDied;
+        //healthSystem.OnDamaged += HealthSystem_OnDamaged;
 
         stateMachine = new FiniteStateMachine();
     }
+
+    private void HealthSystem_OnDamaged(object sender, EventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void HealthSystem_OnDied(object sender, EventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
     public virtual void Update()
     {
         stateMachine.currentState.LogicUpdate();
@@ -42,14 +68,14 @@ public class Entity : MonoBehaviour
     }
     public virtual void SetVelocity(float velocity)
     {
-        velocityWorkspace.Set(facingDirection * velocity, rigidbody2d.velocity.y);
-        rigidbody2d.velocity = velocityWorkspace;
+        movementVelocity.Set(facingDirection * velocity, rigidbody2d.velocity.y);
+        rigidbody2d.velocity = movementVelocity;
     }
     public virtual bool CheckWall()
     {
         //RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider2d.bounds.center, boxCollider2d.bounds.size, 0f, facingDirection * Vector2.right, entityData.wallCheckDistance, entityData.whatIsGround);
         //return raycastHit.collider != null;
-       
+
         return Physics2D.Raycast(wallCheck.position, aliveGO.transform.right, entityData.wallCheckDistance, entityData.whatIsGround);
     }
     public virtual bool CheckLedge()
@@ -63,7 +89,7 @@ public class Entity : MonoBehaviour
     {
         facingDirection *= -1;
         aliveGO.transform.Rotate(0f, 180f, 0f);
-        
+
     }
     public virtual bool CheckPlayerInMinAgroRange()
     {
@@ -73,24 +99,46 @@ public class Entity : MonoBehaviour
     {
         return Physics2D.Raycast(playerCheck.position, aliveGO.transform.right, entityData.maxAgroRange, entityData.whatIsPlayer);
     }
+    public virtual bool CheckPlayerInCloseAttackRange()
+    {
+        return Physics2D.Raycast(playerCheck.position, aliveGO.transform.right, entityData.closeAttackActionDistance, entityData.whatIsPlayer);
+    }
+    public virtual void Damage(AttackDetails attackDetails)
+    {
+        currentHealth -= attackDetails.damageAmount;
+        DamageHop(entityData.damageHopSpeed);
 
-
-
-
-
-
+        if (attackDetails.position.x > aliveGO.transform.position.x) //oyuncu sağdan vuruyorsa
+        {
+            lastDamageDirection = -1;
+        }
+        else
+        {
+            lastDamageDirection = 1;
+        }
+    }
+    public virtual void DamageHop(float velocity)
+    {
+        movementVelocity.Set(rigidbody2d.velocity.x, velocity);
+        rigidbody2d.velocity = movementVelocity;
+    }
 
     public virtual void OnDrawGizmos()
     {
-      
+        Gizmos.DrawLine(wallCheck.position,wallCheck.position+(Vector3)(Vector2.right*facingDirection*entityData.wallCheckDistance));
+        Gizmos.DrawLine(wallCheck.position,wallCheck.position+(Vector3)(Vector2.right*facingDirection*entityData.wallCheckDistance));
+        //Gizmos.DrawWireSphere(playerCheck.position + (Vector3)(aliveGO.transform.right * entityData.closeAttackActionDistance), 0.2f);
+        //Gizmos.DrawWireSphere(playerCheck.position + (Vector3)(aliveGO.transform.right * entityData.minAgroRange), 0.2f);
+        //Gizmos.DrawWireSphere(playerCheck.position + (Vector3)(aliveGO.transform.right * entityData.maxAgroRange), 0.2f);
     }
 
-
-
-
-
-
 }
+
+
+
+
+
+
 
 //Color rayColor;
 //if (raycastHit.collider != null) rayColor = Color.cyan;

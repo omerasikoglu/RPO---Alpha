@@ -5,59 +5,84 @@ using System;
 
 public class HealthSystem : MonoBehaviour
 {
-    public event EventHandler OnDamaged;
-    public event EventHandler OnDied;
+    public event EventHandler<OnDamagedEventArgs> OnDamaged;
+    public event System.EventHandler OnDied;
+    public class OnDamagedEventArgs : EventArgs
+    {
+        public int direction;
+    }
 
-    private int healthAmountMax; //current health amount
-    private int healthAmount;
+    [SerializeField] private int healthAmountMax;
+
+    private int currentHealthAmount;
+    private int lastHealthAmount; //damage yemeden önceki canı
 
     private void Awake()
     {
-        healthAmount = healthAmountMax;
+        currentHealthAmount = healthAmountMax;
+        lastHealthAmount = healthAmountMax;
     }
-    public void Damage(int damageAmount, DamageTypeSO damageType = null)
+    public void Damage(AttackDetails attackDetails)
     {
-        if (damageType != null)
+        int direction;
+        if (attackDetails.damageType != null)
         {
-            //damage typea göre damagei buraya ekle
+            //TODO: damage typea göre damagei buraya ekle
         }
+        if (attackDetails.position.x < transform.position.x)
+        {
+            direction = 1;
+        }
+        else
+        {
+            direction = -1;
+        }
+       
+        currentHealthAmount -= attackDetails.damageAmount;
+        currentHealthAmount = Mathf.Clamp(currentHealthAmount, 0, healthAmountMax);
 
-        healthAmount -= damageAmount;
-        healthAmount = Mathf.Clamp(healthAmount, 0, healthAmountMax);
-
-        OnDamaged?.Invoke(this, EventArgs.Empty);
+        OnDamaged?.Invoke(this, new OnDamagedEventArgs { direction = direction });
         if (IsDead())
         {
             OnDied?.Invoke(this, EventArgs.Empty);
         }
+        lastHealthAmount = currentHealthAmount;
     }
 
     public void Heal(int healAmount)
     {
-        healthAmount += healAmount;
+        currentHealthAmount += healAmount;
     }
     public bool IsFullHealth()
     {
-        return healthAmount == healthAmountMax;
+        return currentHealthAmount == healthAmountMax;
     }
     public bool IsDead()
     {
-        return healthAmount <= 0;
+        return currentHealthAmount <= 0;
     }
     public int GetHealthAmount()
     {
-        return healthAmount;
+        return currentHealthAmount;
     }
     public void SetHealthAmountMax(int healthAmountMax, bool updateHealthAmount)
     {
         this.healthAmountMax = healthAmountMax;
         if (updateHealthAmount)
         {
-            healthAmount = healthAmountMax;
+            currentHealthAmount = healthAmountMax;
         }
     }
     public float GetHealthAmountNormalized()
     {
-        return (float)healthAmount / healthAmountMax;
+        return (float)currentHealthAmount / healthAmountMax;
+    }
+    public int GetLastHealthAmount()
+    {
+        return lastHealthAmount;
+    }
+    public float GetLastHealthAmountNormalized()
+    {
+        return (float) lastHealthAmount/ healthAmountMax;
     }
 }

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-
+﻿using System;                                               //
+using System.Collections;                                   //
+using System.Collections.Generic;                           //<RectTransform>().localPosition --> posx
+using UnityEngine;                                          //<RectTransform>().sizeDelta --> width height -->alttaki
+using UnityEngine.UI;                                       //
+                                                            //
 public class HealthUI : MonoBehaviour
 {
     [SerializeField] private HealthSystem healthSystem;
@@ -73,7 +73,7 @@ public class HealthUI : MonoBehaviour
     {
         int healthCount = healthSystem.GetHealthAmount();
         borderTransform.transform.GetComponent<RectTransform>().localPosition = new Vector3
-            (barOffsetAmount * (int)healthCount, 0f, 0f);
+            (barOffsetAmount * (int)healthCount, 0f, 0f);   
         borderTransform.transform.GetComponent<RectTransform>().sizeDelta = new Vector2
             (barsizeDeltaXAmount * (int)healthCount, barSizeDeltaYAmount + extraBorderAmount);
     }

@@ -9,7 +9,7 @@
 //    [SerializeField] private bool isFirstSet;
 //    [SerializeField] private Sprite arrowSprite;
 //    [SerializeField] private List<MinionTypeSO> ignoreMinionTypeList;
-//    [SerializeField] private bool instantSummon=false;
+//    [SerializeField] private bool instantSummon = false;
 
 //    private Dictionary<MinionTypeSO, Transform> btnTransformDictionary;
 //    private Transform arrowButtonTransform;
@@ -26,13 +26,13 @@
 
 //        btnTransformDictionary = new Dictionary<MinionTypeSO, Transform>();
 
-//       // int index = 0;
+//        // int index = 0;
 
 //        arrowButtonTransform = Instantiate(btnTemplate, transform);
 //        arrowButtonTransform.gameObject.SetActive(true);
 
-//       // float offsetAmount = +120f;
-//       // arrowButtonTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(offsetAmount * index, 0);
+//        // float offsetAmount = +120f;
+//        // arrowButtonTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(offsetAmount * index, 0);
 
 //        arrowButtonTransform.Find("image").GetComponent<Image>().sprite = arrowSprite;
 //        arrowButtonTransform.Find("image").GetComponent<RectTransform>().sizeDelta = new Vector2(0, -30f);
@@ -53,15 +53,15 @@
 //            Transform btnTransform = Instantiate(btnTemplate, transform);
 //            btnTransform.gameObject.SetActive(true);
 
-//           // offsetAmount = +120f;
-//          //  btnTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(offsetAmount * index, 0);
+//            // offsetAmount = +120f;
+//            //  btnTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(offsetAmount * index, 0);
 
 //            btnTransform.Find("image").GetComponent<Image>().sprite = minionType.sprite;
 //            btnTransform.GetComponent<Button>().onClick.AddListener(() =>
 //            {
 //                if (instantSummon)  //tıklandıgında minyonun olusması
 //                {
-//                    Minion.Create(minionType, true, UtilsClass.GetMouseWorldPosition()); 
+//                    Minion.Create(minionType, true, UtilsClass.GetMouseWorldPosition());
 //                }
 //                else
 //                {
@@ -78,7 +78,7 @@
 
 //            btnTransformDictionary[minionType] = btnTransform;
 
-//           // index++;
+//            // index++;
 //        }
 //    }
 //    private void Start()

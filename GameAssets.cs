@@ -7,6 +7,7 @@ public class GameAssets : MonoBehaviour
     [SerializeField] private ResourcesUI resourcesUI;
     [SerializeField] private PlayerController player;
     [SerializeField] private SkillTreeUI skillTreeUI;
+    [SerializeField] private PlayerStatsUI playerStatsUI;
 
     private void Awake()
     {
@@ -19,6 +20,7 @@ public class GameAssets : MonoBehaviour
     private void Start()
     {
         skillTreeUI.SetPlayerSkills(player.GetPlayerSkills());
+        //playerStatsUI.SetPlayerStats(player.GetPlayerStats());
 
     }
 }

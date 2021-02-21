@@ -11,7 +11,7 @@ public class GameAssets : MonoBehaviour
 
     private void Awake()
     {
-        StarSystem starSystem = new StarSystem();
+       // StarSystem starSystem = new StarSystem();
         //resourcesUI.SetStarSystem(starSystem);
 
 

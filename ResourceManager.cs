@@ -5,28 +5,52 @@ using UnityEngine;                                                              
                                                                                    // 
 public class ResourceManager : MonoBehaviour                                       // 
 {
-    public ResourceData resourceAmount;
-
     public static ResourceManager Instance { get; private set; }
+
+    public enum ResourceType
+    {
+        None,
+        //Global Resources
+        Star,
+        Gold,
+        //In-game Resources
+        GreenStar,
+        BlueStar,
+        RedStar,
+        YellowStar,
+    }
+    private ResourceType resourceType;
 
     public event System.EventHandler OnResourceAmountChanged;
 
-    public Dictionary<ResourceTypeSO, int> resourceAmountDictionary; //hangi kaynaktan ne kadar var (her renk yıldızdan ne kadar ve altın)
+    public event EventHandler<OnStarAchievedEventArgs> OnWhichStarAchieved;
+    public class OnStarAchievedEventArgs : EventArgs
+    {
+        public int achievedStarIndex;
+    }
 
+    private ResourceTypeListSO resourceTypeList;
     private LevelListSO levelList;
+    private LevelSO currentLevel;
 
-    [SerializeField] private List<ResourceData> startingResourceAmountList;
-   
+    private Dictionary<ResourceTypeSO, int> resourceAmountDictionary;
+
+    [SerializeField] private List<ResourceData> startingResourceAmountList; //hile mode on
+
+    private List<ResourceTypeSO> starTypesList; //3 yıldızın türleri
+    private List<bool> achieveList; //yıldızların kazanımı
 
     private void Awake()
     {
-       
+        Instance = this;
+
         resourceAmountDictionary = new Dictionary<ResourceTypeSO, int>();
 
-        ResourceTypeListSO resourceTypeList = Resources.Load<ResourceTypeListSO>(typeof(ResourceTypeListSO).Name);
+        resourceTypeList = Resources.Load<ResourceTypeListSO>(typeof(ResourceTypeListSO).Name);
+
         levelList = Resources.Load<LevelListSO>(typeof(LevelListSO).Name);
 
-        Instance = this;
+        
 
         foreach (ResourceTypeSO resourceType in resourceTypeList.list) //kaynak miktarlarını 0'lama
         {
@@ -84,12 +108,34 @@ public class ResourceManager : MonoBehaviour                                    
 
         if (Input.GetKeyDown(KeyCode.M))
         {
-            AddResource(resourceAmount.resourceType,3);
-            Debug.Log(GetResourceAmount(resourceAmount.resourceType));
+            AddResource(GetResourceTypeSO(ResourceType.Gold),3);
+            Debug.Log(GetResourceAmount(GetResourceTypeSO(ResourceType.Gold)));
         }
        
 
     }
-    
+    public ResourceTypeSO GetResourceTypeSO(ResourceType resourceType)
+    {
+        switch (resourceType)
+        {
+            case ResourceType.Star:           return resourceTypeList.list[0];
+            case ResourceType.Gold:           return resourceTypeList.list[1];
+            case ResourceType.GreenStar:      return resourceTypeList.list[2];
+            case ResourceType.BlueStar:       return resourceTypeList.list[3];
+            case ResourceType.RedStar:        return resourceTypeList.list[4];
+            case ResourceType.YellowStar:     return resourceTypeList.list[5];
+            default:                          return resourceTypeList.list[0];
+        }
+    }
+    public void SetStarAchieved(int achievedStarIndex, ResourceTypeSO resourceType) //0-1-2
+    {
+        if (!achieveList[achievedStarIndex]) //daha önceden yıldız alınmadıysa aktive olur
+        {
+            achieveList[achievedStarIndex] = true;
+            ResourceManager.Instance.AddResource(resourceType, 1); //ResourceManager için
+            OnWhichStarAchieved?.Invoke(this, new OnStarAchievedEventArgs { achievedStarIndex = achievedStarIndex }); //UI için
+        }
 
+
+    }
 }

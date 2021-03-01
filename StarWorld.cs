@@ -5,13 +5,13 @@ using UnityEngine;
 
 public class StarWorld : MonoBehaviour
 {
-    public static StarWorld SpawnStarWorld(Vector2 position, ResourceTypeSO starType)
+    public static StarWorld SpawnStarWorld(Vector2 position, ResourceTypeSO resourceType)
     {
         Transform transform = Instantiate(WorldAssets.Instance.pfStarWorld, position, Quaternion.identity);
 
         StarWorld starWorld = transform.GetComponent<StarWorld>();
 
-        starWorld.SetStarType(starType);
+        starWorld.SetStarType(resourceType);
 
         return starWorld;
     }
@@ -27,7 +27,6 @@ public class StarWorld : MonoBehaviour
     {
         this.starType = starType;
         spriteRenderer.sprite = starType.sprite;
-        spriteRenderer.color = starType.GetColor();
     }
     public ResourceTypeSO GetStarType()
     {

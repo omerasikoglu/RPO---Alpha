@@ -51,7 +51,7 @@ public class HealthBar : MonoBehaviour
     }
     private void UpdateHealthBarVisibilty()
     {
-        if (healthSystem.IsFullHealth())
+        if (healthSystem.HasFullHealth())
         {
             gameObject.SetActive(false);
         }

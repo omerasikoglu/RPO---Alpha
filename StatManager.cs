@@ -15,7 +15,6 @@ public class StatManager : MonoBehaviour
         Speed,
         Energy,
         Charisma, //  10/10 all the time
-        //sonradan eklenecekler
         Dodge,  // yüzdelik oran dodge'un 5 ise yüzde 5 dodge'un olur
         Critical,
     }
@@ -28,14 +27,22 @@ public class StatManager : MonoBehaviour
     {
         Instance = this;
         playerStatList = Resources.Load<PlayerStatListSO>(typeof(PlayerStatListSO).Name);
-
+        
     }
-
+    private void Start()
+    {
+        foreach (PlayerStatSO st in playerStatList.list)
+        {
+            st.amount = PlayerPrefs.GetInt(st.name, st.amount); //SO'lardan verileri kaydeder başta
+            //Debug.Log(PlayerPrefs.GetInt(st.name, st.amount));
+        }
+    }
     public void IncreaseStatAmount(StatType statType, int amount)
     {
         if (playerStatList.list.Contains(GetStatSO(statType)))
         {
             GetStatSO(statType).amount += amount;
+            PlayerPrefs.SetInt(GetStatSO(statType).name, GetStatSO(statType).amount); //save güncelleme
             OnStatValuesChanged?.Invoke(this, System.EventArgs.Empty);
         }
         
@@ -45,6 +52,7 @@ public class StatManager : MonoBehaviour
         if (playerStatList.list.Contains(GetStatSO(statType)))
         {
             GetStatSO(statType).amount = amount;
+            PlayerPrefs.SetInt(GetStatSO(statType).name, GetStatSO(statType).amount); //save güncelleme
             OnStatValuesChanged?.Invoke(this, System.EventArgs.Empty);
         }
     }

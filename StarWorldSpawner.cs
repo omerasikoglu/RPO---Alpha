@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class StarWorldSpawner : MonoBehaviour
 {
-    public ResourceTypeSO starType;
+    //public ResourceTypeSO starType;
+    public ResourceTypeSO resourceType;
 
     private void Awake()
     {
-        StarWorld.SpawnStarWorld(transform.position, starType);
+        StarWorld.SpawnStarWorld(transform.position, resourceType);
         Destroy(gameObject);
     }
 }

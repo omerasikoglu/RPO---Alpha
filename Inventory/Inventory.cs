@@ -3,26 +3,29 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Inventory 
+public class Inventory
 {
     public event System.EventHandler OnItemListChanged;
 
+    private SaveSO saveFile;
     private List<Item> itemList;
-    private Action<Item> useItemAction;
+    private Action<Item> useItemAction; //kullandığında bi şey olcaklar
+    private Action<Item, bool> passiveItemAction; //envantere aldığında bi şey olcaklar
 
-    public Inventory(Action<Item> useItemAction)
+    public Inventory(Action<Item> useItemAction, Action<Item, bool> passiveItemAction)
     {
-        this.useItemAction = useItemAction;
+        saveFile = Resources.Load<SaveSO>(typeof(SaveSO).Name);
+
         itemList = new List<Item>();
 
-        //AddItem(new Item { itemType = Item.ItemType.Sword,        amount = 1 });
-        AddItem(new Item { itemType = Item.ItemType.HealthPotion, amount = 1 });
-        AddItem(new Item { itemType = Item.ItemType.ManaPotion,   amount = 1 });
-
+        this.useItemAction = useItemAction;
+        this.passiveItemAction = passiveItemAction;
 
     }
     public void AddItem(Item item)
     {
+        if (!item.IsClickable()) PassiveItem(item, true);
+
         if (item.IsStackable())
         {
             bool itemAlreadyInInventory = false;
@@ -43,12 +46,15 @@ public class Inventory
         {
             itemList.Add(item);
         }
+
         OnItemListChanged?.Invoke(this, System.EventArgs.Empty);
     }
 
     public void RemoveItem(Item item)
     {
-        if (item.IsStackable())
+        if (!item.IsClickable()) PassiveItem(item, false);
+
+        if (item.IsStackable() || item.IsClickable())
         {
             Item itemInInventory = null;
 
@@ -56,7 +62,7 @@ public class Inventory
             {
                 if (inventoryItem.itemType == item.itemType)
                 {
-                    inventoryItem.amount -= item.amount;
+                    inventoryItem.amount -= 1; //item listten 1 item kaldırır
                     itemInInventory = inventoryItem;
                 }
             }
@@ -69,12 +75,18 @@ public class Inventory
         {
             itemList.Remove(item);
         }
+
         OnItemListChanged?.Invoke(this, System.EventArgs.Empty);
     }
 
     public void UseItem(Item item)
     {
         useItemAction(item);
+    }
+
+    public void PassiveItem(Item item, bool isAdding)
+    {
+        passiveItemAction(item, isAdding);
     }
 
     public List<Item> GetItemList()
@@ -87,12 +99,8 @@ public class Inventory
         return itemList.Count;
     }
 
-
-
-
-
-
-
-
-
 }
+//AddItem(new Item { itemType = Item.ItemType.HealthPotion, amount = 1 });
+//AddItem(new Item { itemType = Item.ItemType.ManaPotion, amount = 1 });
+//AddItem(new Item { itemType = Item.ItemType.Medkit, amount = 1 });
+//AddItem(new Item { itemType = Item.ItemType.Sword, amount = 1 });

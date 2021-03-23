@@ -9,6 +9,7 @@ public class GameAssets : MonoBehaviour
     [SerializeField] private SkillTreeUI skillTreeUI;
     //[SerializeField] private PlayerStatsUI playerStatsUI;
     [SerializeField] private InventoryUI inventoryUI;
+    [SerializeField] private ShopUI shopUI;
 
     private void Awake()
     {
@@ -22,6 +23,7 @@ public class GameAssets : MonoBehaviour
     {
         skillTreeUI.SetPlayerSkills(player.GetPlayerSkills());
         inventoryUI.SetPlayer(player);
+        shopUI.SetPlayer(player);
         //inventoryUI.SetInventory(player.GetInventory());
         //playerStatsUI.SetPlayerStats(player.GetPlayerStats());
 

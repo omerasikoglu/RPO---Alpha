@@ -10,7 +10,7 @@ public class MouseEnterExitEvents : MonoBehaviour, IPointerEnterHandler, IPointe
     public event System.EventHandler OnMouseEnter;
     public event System.EventHandler OnMouseExit;
     public event System.EventHandler OnRightClickEnter;
-    public event System.EventHandler OnLeftClickEnter;
+    //public event System.EventHandler OnLeftClickEnter;
 
     public void OnPointerClick(PointerEventData eventData)
     {

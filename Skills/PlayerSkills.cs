@@ -6,6 +6,7 @@ using UnityEngine;
 public class PlayerSkills
 {
     public event System.EventHandler OnSkillPointsChanged;
+    public event System.EventHandler OnResetAllSkills;
     public event EventHandler<OnSkillUnlockedEventArgs> OnSkillUnlocked;
     public class OnSkillUnlockedEventArgs : EventArgs
     {
@@ -147,7 +148,12 @@ public class PlayerSkills
             default: return ("nope");
         }
     }
-
+    public void ResetSkills()
+    {
+        unlockedSkillTypeList.Clear();
+        OnResetAllSkills?.Invoke(this, System.EventArgs.Empty);
+        OnSkillPointsChanged?.Invoke(this, System.EventArgs.Empty);
+    }
     public bool TryUnlockSkill(SkillType skillType)
     {
         if (CanUnlock(skillType))
@@ -155,7 +161,7 @@ public class PlayerSkills
             if (ResourceManager.Instance.GetRemainedResourceAmount(ResourceManager.ResourceType.Star)
                 - GetSkillStarAmountForUnlock(skillType) >= 0) //yeterli yıldızın var mı skill'i açmak için
             {
-                ResourceManager.Instance.SetRemainedResourceAmount(ResourceManager.ResourceType.Star, GetSkillStarAmountForUnlock(skillType));
+                ResourceManager.Instance.SpendResources(ResourceManager.ResourceType.Star, GetSkillStarAmountForUnlock(skillType));
                 OnSkillPointsChanged?.Invoke(this, System.EventArgs.Empty);
                 UnlockSkill(skillType);
                 return true;
@@ -176,7 +182,6 @@ public class PlayerSkills
         {
             if (!unlockedSkillTypeList.Contains(skillType)) unlockedSkillTypeList.Add(skillType);
         }
-        //PlayerPrefs.SetInt(skillType.ToString(), 1);
         OnSkillUnlocked?.Invoke(this, new OnSkillUnlockedEventArgs { skillType = skillType });
     }
 

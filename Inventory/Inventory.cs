@@ -56,24 +56,26 @@ public class Inventory
 
         if (item.IsStackable() || item.IsClickable())
         {
-            Item itemInInventory = null;
+                Item itemInInventory = null;
 
-            foreach (Item inventoryItem in itemList)
-            {
-                if (inventoryItem.itemType == item.itemType)
+                foreach (Item inventoryItem in itemList)
                 {
-                    inventoryItem.amount -= 1; //item listten 1 item kaldırır
-                    itemInInventory = inventoryItem;
+                    if (inventoryItem.itemType == item.itemType)
+                    {
+                        inventoryItem.amount -= 1; //item listten 1 item kaldırır
+                        itemInInventory = inventoryItem;
+                    }
                 }
-            }
-            if (itemInInventory != null && itemInInventory.amount <= 0)
-            {
-                itemList.Remove(itemInInventory);
-            }
+                if (itemInInventory != null && itemInInventory.amount <= 0)
+                {
+                    itemList.Remove(itemInInventory);
+                    saveFile.gottenItemList.Remove(item);
+                }
         }
         else
         {
             itemList.Remove(item);
+            saveFile.gottenItemList.Remove(item);
         }
 
         OnItemListChanged?.Invoke(this, System.EventArgs.Empty);

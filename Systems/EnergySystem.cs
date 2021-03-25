@@ -5,8 +5,6 @@ using UnityEngine;
 
 public class EnergySystem : MonoBehaviour
 {
-    public EnergySystem Instance { get; private set; }
-
     public event System.EventHandler OnEnergyAmountChanged;
     public event System.EventHandler OnNotEnoughEnergy;
     public event System.EventHandler OnMaxEnergyAmountIncreased;
@@ -20,17 +18,15 @@ public class EnergySystem : MonoBehaviour
 
     private float currentEnergyAmount;
     private bool isEnergyGenerating = true;
-    private float lastEnergyStopTime = Mathf.NegativeInfinity; //generate'in durduğu an
+    //private float lastEnergyStopTime = Mathf.NegativeInfinity; //generate'in durduğu an
 
     private void Awake()
     {
         currentEnergyAmount = energyAmountMax;
         energyTimer = energyTimerMax;
+
     }
-    private void Start()
-    {
-        Instance = this;
-    }
+
     private void Update()
     {
         EnergyGenerator();
@@ -46,7 +42,7 @@ public class EnergySystem : MonoBehaviour
                 isEnergyGenerating = true;
             }
         }
-        if (!HaveFullEnergy() && isEnergyGenerating)
+        if (!HasFullEnergy() && isEnergyGenerating)
         {
             // Generate Energy
             energyTimer -= Time.deltaTime;
@@ -69,7 +65,7 @@ public class EnergySystem : MonoBehaviour
 
             if (energyTimer == null)
             {
-                this.energyWaitingTimer = new EnergyTimer { timer = 3f };
+                this.energyWaitingTimer = new EnergyTimer { timer = 1f };
             }
             currentEnergyAmount -= energyAmount;
             currentEnergyAmount = Mathf.Clamp(currentEnergyAmount, 0, energyAmountMax);
@@ -87,7 +83,7 @@ public class EnergySystem : MonoBehaviour
     }
     public class EnergyTimer //coroutine'in canı cehenneme
     {
-        public float timer = 2f;
+        public float timer = 1f;
     }
     public int GetEnergyAmount() { return (int)currentEnergyAmount; }
     public int GetEnergyAmountMax()
@@ -99,7 +95,7 @@ public class EnergySystem : MonoBehaviour
     {
         return currentEnergyAmount >= needingEnergyAmount ? true : false;
     }
-    private bool HaveFullEnergy()
+    public bool HasFullEnergy()
     {
         return currentEnergyAmount >= energyAmountMax;
     }
@@ -107,7 +103,14 @@ public class EnergySystem : MonoBehaviour
     public void IncreaseMaxEnergyAmount(int amount)
     {
         energyAmountMax += amount;
+        currentEnergyAmount = energyAmountMax;
+        StatManager.Instance.IncreaseStatAmount(StatManager.StatType.Energy, amount);
         OnMaxEnergyAmountIncreased?.Invoke(this, System.EventArgs.Empty);
     }
-
+    public void HealEnergy(int energyAmount)
+    {
+        currentEnergyAmount += energyAmount;
+        currentEnergyAmount = Mathf.Clamp(currentEnergyAmount, 0, energyAmountMax);
+        OnEnergyAmountChanged?.Invoke(this, System.EventArgs.Empty);
+    }
 }

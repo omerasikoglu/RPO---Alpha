@@ -20,7 +20,7 @@ public class Item
             Armor,
             EnergyPotion
         }
- 
+    
     public Sprite GetSprite()
         {
         switch (itemType)
@@ -177,6 +177,23 @@ public class Item
             case ItemType.LuckItem:
             case ItemType.Armor:
                 return false;
+        }
+    }
+    public int GetChangedHealthPoint()
+    {
+        switch (itemType)
+        {
+            case ItemType.Armor: return 3;
+
+            case ItemType.Sword:
+            case ItemType.HealthPotion:
+            case ItemType.ManaPotion:
+            case ItemType.Coin:
+            case ItemType.Medkit:
+            case ItemType.LuckItem:
+            case ItemType.EnergyPotion:
+            default:        
+                        return 0;
         }
     }
 }

@@ -5,9 +5,10 @@ using System;
 
 public class HealthSystem : MonoBehaviour
 {
-    public HealthSystem Instance { get; private set; }
+    //public HealthSystem Instance { get; private set; }
 
     public event System.EventHandler OnMaxHealthAmountIncreased;
+    public event System.EventHandler OnHealthAmountIncreased;
     public event EventHandler<OnDamagedEventArgs> OnDamaged;
     public event System.EventHandler OnDied;
     public class OnDamagedEventArgs : EventArgs
@@ -25,10 +26,7 @@ public class HealthSystem : MonoBehaviour
         currentHealthAmount = healthAmountMax;
         lastHealthAmount = healthAmountMax;
     }
-    private void Start()
-    {
-        Instance = this;
-    }
+
     public void Damage(AttackDetails attackDetails)
     {
         int direction;
@@ -44,7 +42,7 @@ public class HealthSystem : MonoBehaviour
         {
             direction = -1;
         }
-       
+
         currentHealthAmount -= attackDetails.damageAmount;
         currentHealthAmount = Mathf.Clamp(currentHealthAmount, 0, healthAmountMax);
 
@@ -59,8 +57,14 @@ public class HealthSystem : MonoBehaviour
     public void Heal(int healAmount)
     {
         currentHealthAmount += healAmount;
+        currentHealthAmount = Mathf.Clamp(currentHealthAmount, 0, healthAmountMax);
+        OnHealthAmountIncreased?.Invoke(this, System.EventArgs.Empty);
+        lastHealthAmount = currentHealthAmount;
     }
-    public bool IsFullHealth()
+
+
+
+    public bool HasFullHealth()
     {
         return currentHealthAmount == healthAmountMax;
     }
@@ -76,13 +80,19 @@ public class HealthSystem : MonoBehaviour
     {
         return healthAmountMax;
     }
-    public void SetHealthAmountMax(int healthAmountMax, bool updateHealthAmount)
+    public void SetHealthAmountMax(int healthAmountMax, bool restoreHealthAmount)
     {
-        this.healthAmountMax = healthAmountMax;
-        if (updateHealthAmount)
+        this.healthAmountMax = healthAmountMax; // max health'i setler , current health'ini de max'ler
+        if (restoreHealthAmount)
         {
             currentHealthAmount = healthAmountMax;
+            lastHealthAmount = currentHealthAmount;
         }
+    }
+    public void SetCurrentHealth(int amount)
+    {
+        currentHealthAmount = amount;
+        lastHealthAmount = currentHealthAmount;
     }
     public float GetHealthAmountNormalized()
     {
@@ -94,11 +104,18 @@ public class HealthSystem : MonoBehaviour
     }
     public float GetLastHealthAmountNormalized()
     {
-        return (float) lastHealthAmount/ healthAmountMax;
+        return (float)lastHealthAmount / healthAmountMax;
     }
-    public void IncreaseMaxHealthAmount(int amount)
+    public void IncreaseMaxHealthAmount(int amount, bool onlyIncrease = false)
     {
         healthAmountMax += amount;
+        if (!onlyIncrease) Heal(amount);
+
+        StatManager.Instance.IncreaseStatAmount(StatManager.StatType.Health, amount);
         OnMaxHealthAmountIncreased?.Invoke(this, System.EventArgs.Empty);
     }
 }
+//healthAmountMax += amount;
+//currentHealthAmount = healthAmountMax;
+//StatManager.Instance.IncreaseStatAmount(StatManager.StatType.Health, amount);
+//OnMaxHealthAmountIncreased?.Invoke(this, System.EventArgs.Empty);
